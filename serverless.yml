@@ -65,8 +65,8 @@ provider:
     SERVICE_NAME: lsp-oms
     ENABLE_REQUEST_LOGGING: true
     # Custom Domain Configuration
-    API_DOMAIN: ${self:custom.domainMapping.${self:provider.stage}, 'devapi.beejcap.ai'}
-    API_BASE_URL: https://${self:custom.domainMapping.${self:provider.stage}, 'devapi.beejcap.ai'}
+    API_DOMAIN: ${self:custom.domainMapping.${self:provider.stage}, 'devapi.beejcap.com'}
+    API_BASE_URL: https://${self:custom.domainMapping.${self:provider.stage}, 'devapi.beejcap.com'}
   iam:
     role:
       name: beejcap-${opt:stage, self:provider.stage}-role
@@ -204,8 +204,8 @@ resources:
           - email
         EmailConfiguration:
           EmailSendingAccount: DEVELOPER  
-          SourceArn: arn:aws:ses:ap-south-1:114337216111:identity:beejcap.ai
-          From: The Beejcap Team <hello@beejcap.ai>
+          SourceArn: arn:aws:ses:ap-south-1:114337216111:identity:beejcap.com
+          From: The Beejcap Team <hello@beejcap.com>
         VerificationMessageTemplate:
           DefaultEmailOption: CONFIRM_WITH_CODE
           EmailMessage: | 
@@ -275,11 +275,7 @@ custom:
       - serverless-domain-manager
     prod: 
       - serverless-domain-manager
-    staging: 
-      - serverless-domain-manager
-    test: 
-      - serverless-domain-manager
-  
+
   # Stage-specific functions
   functions:
     vikas: ${self:custom.allFunctions} # Enable functions for vikas stage
@@ -299,42 +295,12 @@ custom:
       events:
         # Public auth endpoints
         - httpApi:
-            path: /v1/auth/signup
-            method: post
-        - httpApi:
-            path: /v1/auth/login
-            method: post
-        - httpApi:
-            path: /v1/auth/confirm
-            method: post
-        - httpApi:
-            path: /v1/auth/forgot-password
-            method: post
-        - httpApi:
-            path: /v1/auth/confirm-forgot-password
-            method: post
-        - httpApi:
-            path: /v1/auth/resend-code
-            method: post
-        - httpApi:
-            path: /v1/auth/validate-token
-            method: post
-        
-        # Public endpoints - keeping only non-LSP endpoints
-        
+            path: /v1/auth/{proxy+}
+            method: any
         # Admin Routes (no authentication)
         - httpApi:
-            path: /v1/admin/confirmuserSignup
-            method: post
-        - httpApi:
-            path: /v1/admin/deleteEnterprise
-            method: post
-        - httpApi:
-            path: /v1/admin/getAllEnterprises
-            method: get
-        - httpApi:
-            path: /v1/admin/info
-            method: get
+            path: /v1/admin/{proxy+}
+            method: any
   
   # Exclude functions, events for vikas stage
   excludeVikas: ${strToBool(${self:custom.stageConfig.${self:provider.stage}.excludeResources, false})}
@@ -353,10 +319,10 @@ custom:
       excludeResources: false
   
   customDomain:
-    domainName: ${self:custom.domainMapping.${self:provider.stage}, 'devapi.beejcap.ai'}
+    domainName: ${self:custom.domainMapping.${self:provider.stage}, 'devapi.beejcap.com'}
     stage: ${self:provider.stage}
     basePath: ''
-    certificateName: '*.beejcap.ai'
+    certificateName: '*.beejcap.com'
     createRoute53Record: false
     endpointType: 'regional'
     securityPolicy: tls_1_2
@@ -371,5 +337,5 @@ custom:
     vikas: DEBUG
     
   domainMapping:
-    dev: devapi.beejcap.ai
-    prod: api.beejcap.ai
+    dev: devapi.beejcap.com
+    prod: api.beejcap.com

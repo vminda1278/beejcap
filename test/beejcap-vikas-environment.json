@@ -1,0 +1,81 @@
+{
+	"id": "beejcap-vikas-env-id",
+	"name": "Beejcap Vikas Environment",
+	"values": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:4000",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "cognitoClientId",
+			"value": "25u25dp56o7luc3ac7rlj4b1nc",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "cognitoUserPoolId",
+			"value": "ap-south-1_12WLhvM3o",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "region",
+			"value": "ap-south-1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "stage",
+			"value": "vikas",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "email",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "supplierAdminEmail",
+			"value": "vminda.iitg@gmail.com",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "supplierAdminPassword",
+			"value": "TempPassword123!",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2025-08-23T00:00:00.000Z",
+	"_postman_exported_using": "Postman/10.0.0"
+}

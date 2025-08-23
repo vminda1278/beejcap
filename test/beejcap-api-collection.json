@@ -1,0 +1,457 @@
+{
+	"info": {
+		"_postman_id": "beejcap-api-collection-2025",
+		"name": "Beejcap API Collection",
+		"description": "Complete API collection for Beejcap platform supporting multiple enterprise types: superadmin, supplier, retailer, financier, and lsp.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "beejcap-dev-team"
+	},
+	"item": [
+		{
+			"name": "Supplier Auth",
+			"description": "User authentication and account management endpoints",
+			"item": [
+				{
+					"name": "User Signup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"email\": \"{{supplierAdminEmail}}\",\n    \"password\": \"{{supplierAdminPassword}}\",\n    \"business_name\": \"Test Business\",\n    \"enterprise_type\": \"supplier\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/signup",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"signup"
+							]
+						},
+						"description": "Register a new user for any enterprise type (superadmin, supplier, retailer, financier, lsp)"
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm Signup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{supplierAdminEmail}}\",\n    \"code\": \"{{testEmailVerificationCode}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/confirm",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"confirm"
+							]
+						},
+						"description": "Confirm user signup with email verification code"
+					},
+					"response": []
+				},
+				{
+					"name": "User Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.status === 'success' && response.token) {",
+									"        pm.environment.set('authToken', response.token.jwt);",
+									"        pm.environment.set('eid', response.token.eid);",
+									"        pm.environment.set('userRole', response.token.role);",
+									"        pm.environment.set('enterpriseType', response.token.enterprise_type);",
+									"        console.log('Auth token saved:', response.token.jwt);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{supplierAdminEmail}}\",\n    \"password\": \"{{supplierAdminPassword}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user and get JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{supplierAdminEmail}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/forgot-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"forgot-password"
+							]
+						},
+						"description": "Initiate password reset process"
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{supplierAdminEmail}}\",\n    \"password\": \"{{supplierAdminPassword}}\",\n    \"confirmationCode\": \"123456\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/confirm-forgot-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"confirm-forgot-password"
+							]
+						},
+						"description": "Complete password reset with confirmation code"
+					},
+					"response": []
+				},
+				{
+					"name": "Resend Verification Code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{supplierAdminEmail}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/resend-code",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"resend-code"
+							]
+						},
+						"description": "Resend email verification code"
+					},
+					"response": []
+				},
+				{
+					"name": "Send OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"mobile_number\": \"{{rider1Mobile}}\",\n  \"eid\": \"{{eid}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/sendOTP",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"sendOTP"
+							]
+						},
+						"description": "Send OTP to mobile number for authentication"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify OTP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.status === 'success' && response.token) {",
+									"        pm.environment.set('otpAuthToken', response.token.jwt);",
+									"        pm.environment.set('otpEid', response.token.eid);",
+									"        pm.environment.set('otpUserRole', response.token.role);",
+									"        console.log('OTP auth token saved:', response.token.jwt);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"mobile_number\": \"{{rider1Mobile}}\",\n  \"otp\": \"{{testOTP}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/verifyOTP",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"verifyOTP"
+							]
+						},
+						"description": "Verify OTP and get authentication token"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"description": "Administrative functions for user and enterprise management",
+			"item": [
+				{
+					"name": "Confirm User Signup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{testGuestEmail}}\",\n    \"eid\": \"{{eid}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/admin/confirmuserSignup",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"admin",
+								"confirmuserSignup"
+							]
+						},
+						"description": "Admin confirms a user's signup (approves user account)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Enterprise",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"eid\": \"{{eid}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/admin/deleteEnterprise",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"admin",
+								"deleteEnterprise"
+							]
+						},
+						"description": "Delete an entire enterprise and all associated users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Enterprises",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/admin/getAllEnterprises",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"admin",
+								"getAllEnterprises"
+							]
+						},
+						"description": "Get a list of all enterprises in the system"
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Info",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/admin/info",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"admin",
+								"info"
+							]
+						},
+						"description": "Get admin system information"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "{{baseUrl}}",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "eid",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

@@ -91,11 +91,10 @@ const listUnconfirmedUsers = async (req, res, next) => {
 const adminConfirmUserSignUp = async (req, res, next) => {  
   try{
       console.log(req.body);
-      if (!req.body || !req.body.otherProps ) {
+      if (!req.body || !req.body.data ) {
         throw new Error("otherProps is required in the request body");
       }
-      const {username} = req.body.otherProps;
-      let {eid} = req.body.otherProps; // This might be provided or we'll look it up
+      const {username} = req.body.data;
       
       if (!username) {
         throw new Error("username is required in otherProps");
@@ -112,15 +111,11 @@ const adminConfirmUserSignUp = async (req, res, next) => {
       }
       
       const authATTR1 = authResult.Item.ATTR1;
-      
-      // Use EID from authentication record if not provided or if provided EID is a placeholder
-      if (!eid || eid === "placeholder-eid" || eid === "test-eid") {
-        eid = authATTR1.eid;
-        if (!eid) {
-          throw new Error(`No EID found in authentication record for user: ${username}`);
-        }
-        console.log(`Using EID from authentication record: ${eid}`);
+      const eid = authATTR1.eid;
+      if (!eid) {
+        throw new Error(`No EID found in authentication record for user: ${username}`);
       }
+      
       
       const updatedAuthATTR1 = { ...authATTR1, isConfirmedByAdmin: "true" };
       

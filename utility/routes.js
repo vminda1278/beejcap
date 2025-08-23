@@ -16,7 +16,6 @@ authRouter.post('/confirm-forgot-password', authController.confirmUserForgotPass
 authRouter.post('/resend-code', authController.resendVerificationCode);
 authRouter.post('/sendOTP', authController.sendUserOTP);
 authRouter.post('/verifyOTP', authController.verifyUserOTP);
-authRouter.post('/validate-token', authController.validateAWSToken);
 
 adminRouter.post('/confirmuserSignup', adminController.adminConfirmUserSignUp);
 adminRouter.post('/deleteEnterprise', adminController.deleteEnterprise);
