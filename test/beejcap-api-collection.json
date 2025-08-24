@@ -270,6 +270,39 @@
 						"description": "Add a new supplier sales manager user to the existing supplier enterprise. Uses eid from admin login. Requires supplier:addUser claim."
 					},
 					"response": []
+				},
+				{
+					"name": "Add Supplier Sales Executive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAuthToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"email\": \"{{supplier_sales_executive_email}}\",\n    \"password\": \"TempPassword123!\",\n    \"business_name\": \"Test Business\",\n    \"enterprise_type\": \"supplier\",\n    \"role\": \"supplier_sales_executive\",\n    \"eid\": \"{{eid}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/supplier/addUser",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"supplier",
+								"addUser"
+							]
+						},
+						"description": "Add a new supplier sales executive user to the existing supplier enterprise. Uses eid from admin login. Requires supplier:addUser claim."
+					},
+					"response": []
 				}
 			]
 		},
@@ -748,6 +781,166 @@
 							]
 						},
 						"description": "Admin deletes a supplier sales manager. Requires supplier:manageUser claim."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Supplier Sales Executive Auth",
+			"description": "Supplier sales executive management endpoints",
+			"item": [
+				{
+					"name": "Login Supplier Sales Executive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{supplier_sales_executive_email}}\",\n    \"password\": \"{{password}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login a supplier sales executive and get auth token."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Email Supplier Sales Executive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{supplier_sales_executive_email}}\",\n    \"code\": \"{{verificationCode}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/confirm",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"confirm"
+							]
+						},
+						"description": "Verify email for supplier sales executive after signup."
+					},
+					"response": []
+				},
+				{
+					"name": "Resend Verification Code Supplier Sales Executive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{supplier_sales_executive_email}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/resend-code",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"resend-code"
+							]
+						},
+						"description": "Resend verification code for supplier sales executive."
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm Supplier Sales Executive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAuthToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{supplier_sales_executive_email}}\",\n    \"eid\": \"{{eid}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/supplier/confirmUser",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"supplier",
+								"confirmUser"
+							]
+						},
+						"description": "Admin confirms a supplier sales executive signup. Requires supplier:manageUser claim."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Supplier Sales Executive",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAuthToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/supplier/deleteUser?email={{supplier_sales_executive_email}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"supplier",
+								"deleteUser"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": "{{supplier_sales_executive_email}}"
+								}
+							]
+						},
+						"description": "Admin deletes a supplier sales executive. Requires supplier:manageUser claim."
 					},
 					"response": []
 				}

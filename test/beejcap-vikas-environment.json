@@ -81,6 +81,24 @@
 			"enabled": true
 		},
 		{
+			"key": "supplier_admin_auth_token",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "password",
+			"value": "TempPassword123!",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "verificationCode",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
 			"key": "enterpriseId",
 			"value": "",
 			"type": "default",
@@ -142,6 +160,36 @@
 		},
 		{
 			"key": "salesManagerEnterpriseType",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "supplier_sales_executive_email",
+			"value": "sakuntala.minda@gmail.com",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "supplier_sales_executive_auth_token",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "supplier_sales_executive_eid",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "supplier_sales_executive_role",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "supplier_sales_executive_enterprise_type",
 			"value": "",
 			"type": "default",
 			"enabled": true
