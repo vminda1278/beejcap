@@ -8,7 +8,7 @@
 	},
 	"item": [
 		{
-			"name": "Supplier Admin",
+			"name": "Supplier Admin Auth",
 			"description": "User authentication and account management endpoints",
 			"item": [
 				{
@@ -237,6 +237,39 @@
 						"description": "Add a new supplier sales head user to the existing supplier enterprise. Uses eid from admin login. Requires supplier:addUser claim."
 					},
 					"response": []
+				},
+				{
+					"name": "Add Supplier Sales Manager",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAuthToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"email\": \"{{salesManagerEmail}}\",\n    \"password\": \"TempPassword123!\",\n    \"business_name\": \"Test Business\",\n    \"enterprise_type\": \"supplier\",\n    \"role\": \"supplier_sales_manager\",\n    \"eid\": \"{{eid}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/supplier/addUser",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"supplier",
+								"addUser"
+							]
+						},
+						"description": "Add a new supplier sales manager user to the existing supplier enterprise. Uses eid from admin login. Requires supplier:addUser claim."
+					},
+					"response": []
 				}
 			]
 		},
@@ -363,7 +396,7 @@
 			]
 		},
 		{
-			"name": "Supplier Sales Head",
+			"name": "Supplier Sales Head Auth",
 			"description": "Supplier management endpoints",
 			"item": [
 				{
@@ -536,6 +569,185 @@
 							]
 						},
 						"description": "Sales head deletes a supplier user. Requires supplier:manageUser claim."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Supplier Sales Manager Auth",
+			"description": "Supplier sales manager management endpoints",
+			"item": [
+				{
+					"name": "Sales Manager Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.status === 'success' && response.token) {",
+									"        pm.environment.set('salesManagerAuthToken', response.token.jwt);",
+									"        pm.environment.set('salesManagerEid', response.token.eid);",
+									"        pm.environment.set('salesManagerRole', response.token.role);",
+									"        pm.environment.set('salesManagerEnterpriseType', response.token.enterprise_type);",
+									"        console.log('Sales manager auth token saved:', response.token.jwt);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{salesManagerEmail}}\",\n    \"password\": \"{{supplierAdminPassword}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate sales manager user and get JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{salesManagerEmail}}\",\n    \"code\": \"{{testEmailVerificationCode}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/confirm",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"confirm"
+							]
+						},
+						"description": "Confirm sales manager signup with email verification code"
+					},
+					"response": []
+				},
+				{
+					"name": "Resend Verification Code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{salesManagerEmail}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/resend-code",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"auth",
+								"resend-code"
+							]
+						},
+						"description": "Resend email verification code for sales manager"
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAuthToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{salesManagerEmail}}\",\n    \"eid\": \"{{eid}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/supplier/confirmUser",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"supplier",
+								"confirmUser"
+							]
+						},
+						"description": "Admin confirms a supplier sales manager signup. Requires supplier:manageUser claim."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAuthToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{salesManagerEmail}}\",\n    \"eid\": \"{{salesManagerEid}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/supplier/deleteUser",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"supplier",
+								"deleteUser"
+							]
+						},
+						"description": "Admin deletes a supplier sales manager. Requires supplier:manageUser claim."
 					},
 					"response": []
 				}

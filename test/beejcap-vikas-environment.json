@@ -115,6 +115,36 @@
 			"value": "",
 			"type": "default",
 			"enabled": true
+		},
+		{
+			"key": "salesManagerEmail",
+			"value": "lalit.kr.minda@gmail.com",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "salesManagerAuthToken",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "salesManagerEid",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "salesManagerRole",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "salesManagerEnterpriseType",
+			"value": "",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
