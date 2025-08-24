@@ -92,14 +92,14 @@ const adminConfirmUserSignUp = async (req, res, next) => {
   try{
       console.log(req.body);
       if (!req.body || !req.body.data ) {
-        throw new Error("otherProps is required in the request body");
+        throw new Error("data is required in the request body");
       }
       const {username} = req.body.data;
       
       if (!username) {
-        throw new Error("username is required in otherProps");
-      } 
-      
+        throw new Error("username is required in data");
+      }
+
       // Fetch current ATTR1 for Authentication record
       const authData = {
         pk: "Authentication",

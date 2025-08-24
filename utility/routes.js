@@ -1,6 +1,8 @@
 const express = require('express');
 const authController = require('../controller/auth-controller');
 const adminController = require('../controller/admin-controller');
+const supplierController = require('../controller/supplier-controller');
+
 const { checkClaims } = require('../controller/auth-controller')
 
 // Create a simple router for the root path
@@ -20,7 +22,9 @@ adminRouter.post('/confirmUserSignup', adminController.adminConfirmUserSignUp);
 adminRouter.post('/deleteEnterprise', adminController.deleteEnterprise);
 adminRouter.get('/getAllEnterprises', adminController.getAllEnterprises);
 
-supplierRouter.route('/addUser').post(checkClaims(['supplier:addUser']), authController.userSignUp)
+supplierRouter.route('/addUser').post(checkClaims(['supplier:manageUser']), authController.userSignUp)
+supplierRouter.route('/confirmUser').post(checkClaims(['supplier:manageUser']), supplierController.confirmSupplierUserSignUp);
+supplierRouter.route('/deleteUser').post(checkClaims(['supplier:manageUser']), supplierController.deleteSupplierUser);
 
 module.exports = {
   adminRouter,

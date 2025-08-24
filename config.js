@@ -9,7 +9,7 @@ module.exports = {
         supplier_sales_head: [""],
         supplier_sales_manager: [""],
         supplier_sales_executive: [""],
-        supplier_admin: ["supplier:addUser"],
+        supplier_admin: ["supplier:manageUser"],
         superadmin_admin: [
             "superadmin:manage"
         ]

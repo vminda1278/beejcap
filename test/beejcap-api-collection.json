@@ -472,6 +472,72 @@
 						"description": "Resend email verification code for sales head"
 					},
 					"response": []
+				},
+				{
+					"name": "Confirm User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAuthToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{salesHeadEmail}}\",\n    \"eid\": \"{{eid}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/supplier/confirmUser",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"supplier",
+								"confirmUser"
+							]
+						},
+						"description": "Sales head confirms a supplier user signup. Requires supplier:manageUser claim."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAuthToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"username\": \"{{salesHeadEmail}}\",\n    \"eid\": \"{{salesHeadEid}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/supplier/deleteUser",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"supplier",
+								"deleteUser"
+							]
+						},
+						"description": "Sales head deletes a supplier user. Requires supplier:manageUser claim."
+					},
+					"response": []
 				}
 			]
 		}
