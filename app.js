@@ -20,11 +20,12 @@ const express = require('express');
 const cors = require('cors');
 const config = require('./config');
 const { v4: uuidv4 } = require('uuid');
+const { validateAWSToken, validateUnauthorisedAccess } = require('./controller/auth-controller');
 
 require('express-async-errors');
 const app = express();
 const bodyParser = require('body-parser');
-const { adminRouter, authRouter, publicRouter } = require('./utility/routes');
+const { adminRouter, authRouter, supplierRouter } = require('./utility/routes');
 
 
 // Add X-Ray middleware (should be first, only if not in local development)
@@ -76,6 +77,7 @@ app.use(bodyParser.json({ strict: false }));
 // Mount API routes under the configured base path
 app.use('/v1/auth', authRouter);
 app.use('/v1/admin', adminRouter);
+app.use('/v1/supplier', validateAWSToken, validateUnauthorisedAccess,supplierRouter);
 
 
 app.use((req, res, next) => {

@@ -39,6 +39,12 @@
 			"enabled": true
 		},
 		{
+			"key": "adminAuthToken",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
 			"key": "accessToken",
 			"value": "",
 			"type": "default",
@@ -71,6 +77,18 @@
 		{
 			"key": "supplierAdminPassword",
 			"value": "TempPassword123!",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "enterpriseId",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "salesHeadEmail",
+			"value": "tpminda@gmail.com",
 			"type": "default",
 			"enabled": true
 		}

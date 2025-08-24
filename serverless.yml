@@ -301,6 +301,10 @@ custom:
         - httpApi:
             path: /v1/admin/{proxy+}
             method: any
+        # Supplier Routes (authentication required)
+        - httpApi:
+            path: /v1/supplier/{proxy+}
+            method: any
   
   # Exclude functions, events for vikas stage
   excludeVikas: ${strToBool(${self:custom.stageConfig.${self:provider.stage}.excludeResources, false})}

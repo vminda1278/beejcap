@@ -17,17 +17,20 @@ const userSignUp = async (req, res, next) => {
       const data = req.body.data;
       
       // Validate required fields for standard roles
-      if(!data || !data.email || !data.password || !data.business_name || !data.enterprise_type || !data.clientId){
-          res.status(500).json({ 'status': 'error', 'message': 'Email, password, business_name, enterprise_type and clientId are required' });
+      if(!data || !data.email || !data.password ||  !data.enterprise_type || !data.clientId){
+          res.status(500).json({ 'status': 'error', 'message': 'Email, password, enterprise_type and clientId are required' });
           return;
       }
       if(!data.username){
           data.username = data.email.toLowerCase();
       }
-      
-    let {email, password, business_name, enterprise_type, clientId, mobile_number, username} = data; 
-    if (!['lsp', 'superadmin', 'supplier', 'retailer', 'financier'].includes(enterprise_type)) {
-          res.status(500).json({ 'status': 'error', 'message': 'Invalid enterprise type. Supported types: lsp, superadmin, supplier, retailer, financier' });
+    if(!data.eid && !data.business_name){ // Business name is required for new enterprise setup
+        res.status(500).json({ 'status': 'error', 'message': 'business_name is required' });
+    }
+          
+    let {email, password, business_name, enterprise_type, clientId, username} = data; 
+    if (!['superadmin', 'supplier', 'retailer', 'financier'].includes(enterprise_type)) {
+          res.status(500).json({ 'status': 'error', 'message': 'Invalid enterprise type. Supported types: superadmin, supplier, retailer, financier' });
           return;
       }
       //email = email.toLowerCase();
@@ -35,8 +38,16 @@ const userSignUp = async (req, res, next) => {
       let userRes = await getItem({ "pk": "Authentication", "sk": "Username#" + username + "#Profile"})
       
       // Determine role based on existing user or new enterprise
-      let role = (data.eid) ? enterprise_type + '_guest' : enterprise_type + '_admin';
-      
+      if(data.eid){ // Internal users getting added
+        if(!data.role)
+            res.status(500).json({ 'status': 'error', 'message': 'Role is required adding for internal users' });
+        if(data.role && !ROLES_CLAIMS[data.role])
+            res.status(500).json({ 'status': 'error', 'message': 'Invalid role for internal users' });
+        if(data.eid !== req.user['custom:eid'])
+            res.status(500).json({ 'status': 'error', 'message': 'Wrong eid provided' });
+      }
+      let role = (data.eid) ? data.role : enterprise_type + '_admin';
+
       let eid = data.eid || uuidv4(); // If eid is not provided, generate a new one
       // Initialize params as an empty array
       let params = [];
@@ -234,543 +245,6 @@ const confirmUserForgotPassword = async (req, res, next) => {
   }
 }
 
-const sendUserOTP = async (req, res, next) => {  
-    const startTime = Date.now();
-    const requestId = logger.logRequestStart('POST /v1/auth/send-otp', req);
-    const requestLogger = logger.child({ requestId, operation: 'sendUserOTP' });
-
-    try {
-        requestLogger.debug('Starting OTP generation', {
-            body: req.body,
-            headers: {
-                userAgent: req.headers['user-agent'],
-                ip: req.ip || req.connection.remoteAddress
-            }
-        });
-        
-        // Input validation
-        if (!req.body || !req.body.mobile_number || !req.body.eid) {
-            requestLogger.warn('Input validation failed - missing required fields', {
-                hasBody: !!req.body,
-                hasMobileNumber: !!(req.body && req.body.mobile_number),
-                hasEid: !!(req.body && req.body.eid)
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/send-otp', requestId, 400, duration, {
-                result: 'validation_error',
-                reason: 'missing_required_fields'
-            });
-
-            return res.status(400).json({
-                'status': 'error', 
-                'message': 'Mobile number and enterprise ID (eid) are required'
-            });
-        }
-        
-        // Sanitize and validate mobile number format (E.164)
-        const mobileNumber = req.body.mobile_number.trim();
-        if (!mobileNumber.match(/^\+[1-9]\d{1,14}$/)) {
-            requestLogger.warn('Mobile number format validation failed', {
-                mobileNumber: mobileNumber,
-                format: 'E.164_required'
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/send-otp', requestId, 400, duration, {
-                result: 'validation_error',
-                reason: 'invalid_mobile_format'
-            });
-
-            return res.status(400).json({
-                'status': 'error', 
-                'message': 'Invalid mobile number format. Use E.164 format (+1234567890)'
-            });
-        }
-
-        const username = mobileNumber + "@lsp-rider.local";
-        
-        requestLogger.info('Input validation successful', {
-            mobileNumber: mobileNumber,
-            eid: req.body.eid,
-            username: username
-        });
-
-        try {
-            requestLogger.logBusinessOperation('userExistenceCheck', {
-                eid: req.body.eid,
-                username: username
-            }, 'start');
-
-            // Check if user exists and is approved in the enterprise
-            await checkUserExistsInEnterpriseModel({
-                eid: req.body.eid,
-                username: username
-            });
-
-            requestLogger.logBusinessOperation('userExistenceCheck', {
-                eid: req.body.eid,
-                username: username
-            }, 'success');
-        } catch (e) {
-            requestLogger.warn('User existence check failed', {
-                eid: req.body.eid,
-                username: username,
-                error: e.message
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/send-otp', requestId, 403, duration, {
-                result: 'authorization_error',
-                reason: e.message
-            });
-
-            return res.status(403).json({
-                'status': 'error',
-                'message': e.message
-            });
-        }
-         
-        // Use test OTP for test phone numbers, otherwise generate random OTP
-        const isTestNumber = mobileNumber.startsWith('+9199999');
-        const otp = isTestNumber ? '123456' : String(Math.floor(100000 + Math.random() * 900000)); // 6-digit OTP as string
-        //const otp = '123456'
-        const otpExpiry = Date.now() + (5 * 60 * 1000); // OTP expires in 5 minutes
-        
-        requestLogger.debug('OTP generated', {
-            mobileNumber: mobileNumber,
-            isTestNumber: isTestNumber,
-            otpLength: otp.length,
-            expiryTime: new Date(otpExpiry).toISOString()
-        });
-        
-        // Send SMS (skip for test numbers to avoid costs)
-        if (!isTestNumber) {
-            try {
-                requestLogger.logExternalCall('Kaleyra', 'sendOtpSMS', {
-                    mobileNumber: mobileNumber,
-                    otpLength: otp.length
-                }, 'start');
-
-                const smsResult = await sendOtpSMS(mobileNumber, otp);
-                
-                if (!smsResult.success) {
-                    throw new Error(smsResult.error || 'Failed to send OTP SMS');
-                }
-
-                requestLogger.logExternalCall('Kaleyra', 'sendOtpSMS', {
-                    mobileNumber: mobileNumber,
-                    messageId: smsResult.messageId,
-                    status: smsResult.status
-                }, 'success');
-
-                requestLogger.info('OTP SMS sent via Kaleyra', {
-                    mobileNumber: mobileNumber,
-                    messageId: smsResult.messageId,
-                    sender: smsResult.sender,
-                    type: smsResult.type
-                });
-            } catch (smsError) {
-                requestLogger.logExternalCall('Kaleyra', 'sendOtpSMS', {
-                    mobileNumber: mobileNumber,
-                    error: smsError.message
-                }, 'error');
-
-                requestLogger.error('OTP SMS sending failed', {
-                    mobileNumber: mobileNumber,
-                    error: smsError.message,
-                    stack: smsError.stack
-                }, smsError);
-
-                const duration = Date.now() - startTime;
-                logger.logRequestEnd('POST /v1/auth/send-otp', requestId, 500, duration, {
-                    result: 'sms_error',
-                    error: smsError.message
-                });
-
-                return res.status(500).json({
-                    'status': 'error', 
-                    'message': 'Failed to send OTP. Please try again.'
-                });
-            }
-        } else {
-            requestLogger.info('Test mode OTP - skipping SMS', {
-                mobileNumber: mobileNumber,
-                testOtp: otp
-            });
-        }
-    
-        // Store OTP in database with expiry
-        requestLogger.logExternalCall('DynamoDB', 'updateItem', {
-            pk: 'Authentication',
-            sk: `Mobile#${mobileNumber}`
-        }, 'start');
-
-        const resp = await updateItem({
-            "pk": "Authentication", 
-            "sk": "Mobile#" + mobileNumber,
-            'update_expression':'SET otp = :otp, otp_expiry = :expiry', 
-            'ex_attr_values': {':otp': otp, ':expiry': otpExpiry}
-        });
-
-        requestLogger.logExternalCall('DynamoDB', 'updateItem', {
-            pk: 'Authentication',
-            sk: `Mobile#${mobileNumber}`
-        }, 'success');
-
-        requestLogger.info('OTP sent successfully', {
-            mobileNumber: mobileNumber,
-            isTestNumber: isTestNumber,
-            expiresIn: 300
-        });
-
-        const duration = Date.now() - startTime;
-        logger.logRequestEnd('POST /v1/auth/send-otp', requestId, 200, duration, {
-            result: 'success',
-            mobileNumber: mobileNumber,
-            isTestNumber: isTestNumber
-        });
-        
-        res.status(200).json({
-            'status': 'success', 
-            'message': 'OTP sent successfully',
-            'expires_in': 300 // 5 minutes in seconds
-        });
-    } catch(e) {
-        requestLogger.error('OTP sending failed with exception', {
-            mobileNumber: req.body ? req.body.mobile_number : null,
-            eid: req.body ? req.body.eid : null,
-            error: e.message,
-            stack: e.stack
-        }, e);
-
-        const duration = Date.now() - startTime;
-        logger.logRequestEnd('POST /v1/auth/send-otp', requestId, 500, duration, {
-            result: 'error',
-            error: e.message
-        });
-
-        const statusCode = e.$metadata && e.$metadata.httpStatusCode ? e.$metadata.httpStatusCode : 500;
-        res.status(statusCode).json({'status': 'error', 'message': e.message || 'Failed to send OTP'});
-        next(e);
-    }
-}
-const verifyUserOTP = async (req, res, next) => {
-    const startTime = Date.now();
-    const requestId = logger.logRequestStart('POST /v1/auth/verify-otp', req);
-    const requestLogger = logger.child({ requestId, operation: 'verifyUserOTP' });
-
-    try{
-        // Input validation
-        requestLogger.debug('Starting OTP verification', {
-            body: req.body,
-            headers: {
-                userAgent: req.headers['user-agent'],
-                ip: req.ip || req.connection.remoteAddress
-            }
-        });
-        
-        if (!req.body || !req.body.mobile_number || !req.body.otp) {
-            requestLogger.warn('Input validation failed - missing required fields', {
-                hasBody: !!req.body,
-                hasMobileNumber: !!(req.body && req.body.mobile_number),
-                hasOtp: !!(req.body && req.body.otp)
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/verify-otp', requestId, 400, duration, {
-                result: 'validation_error',
-                reason: 'missing_required_fields'
-            });
-
-            return res.status(400).json({'status': 'error', 'message': 'Mobile number and OTP are required'});
-        }
-        
-        // Sanitize and validate mobile number format (E.164)
-        const mobileNumber = req.body.mobile_number.trim();
-        const otpInput = String(req.body.otp).trim();
-        
-        if (!mobileNumber.match(/^\+[1-9]\d{1,14}$/)) {
-            requestLogger.warn('Mobile number format validation failed', {
-                mobileNumber: mobileNumber,
-                format: 'E.164_required'
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/verify-otp', requestId, 400, duration, {
-                result: 'validation_error',
-                reason: 'invalid_mobile_format'
-            });
-
-            return res.status(400).json({'status': 'error', 'message': 'Invalid mobile number format. Use E.164 format (+1234567890)'});
-        }
-        
-        // Validate OTP format (6 digits)
-        if (!otpInput.match(/^\d{6}$/)) {
-            requestLogger.warn('OTP format validation failed', {
-                mobileNumber: mobileNumber,
-                otpLength: otpInput.length,
-                otpFormat: 'should_be_6_digits'
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/verify-otp', requestId, 400, duration, {
-                result: 'validation_error',
-                reason: 'invalid_otp_format'
-            });
-
-            return res.status(400).json({'status': 'error', 'message': 'OTP must be 6 digits'});
-        }
-
-        requestLogger.info('Input validation successful', {
-            mobileNumber: mobileNumber,
-            otpLength: otpInput.length
-        });
-        
-        // Get OTP from database
-        requestLogger.logExternalCall('DynamoDB', 'getItem', {
-            pk: 'Authentication',
-            sk: `Mobile#${mobileNumber}`
-        }, 'start');
-
-        const otpRecord = await getItem({"pk": "Authentication", "sk": "Mobile#" + mobileNumber});
-
-        requestLogger.logExternalCall('DynamoDB', 'getItem', {
-            pk: 'Authentication',
-            sk: `Mobile#${mobileNumber}`,
-            found: !!otpRecord.Item
-        }, 'success');
-        
-        if (!otpRecord.Item || !otpRecord.Item.otp) {
-            requestLogger.warn('OTP record not found', {
-                mobileNumber: mobileNumber,
-                hasRecord: !!otpRecord.Item,
-                hasOtp: !!(otpRecord.Item && otpRecord.Item.otp)
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/verify-otp', requestId, 401, duration, {
-                result: 'otp_not_found',
-                mobileNumber: mobileNumber
-            });
-
-            return res.status(401).json({'status': 'error', 'message': 'OTP not found. Please request a new OTP.'});
-        }
-        
-        // Check if OTP is expired
-        if (otpRecord.Item.otp_expiry && Date.now() > otpRecord.Item.otp_expiry) {
-            requestLogger.warn('OTP expired', {
-                mobileNumber: mobileNumber,
-                expiry: new Date(otpRecord.Item.otp_expiry).toISOString(),
-                currentTime: new Date().toISOString()
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/verify-otp', requestId, 401, duration, {
-                result: 'otp_expired',
-                mobileNumber: mobileNumber
-            });
-
-            return res.status(401).json({'status': 'error', 'message': 'OTP has expired. Please request a new OTP.'});
-        }
-        
-        // Verify OTP (ensure both are strings for comparison)
-        if (String(otpRecord.Item.otp) !== otpInput) {
-            requestLogger.warn('OTP verification failed', {
-                mobileNumber: mobileNumber,
-                otpMatches: false
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/verify-otp', requestId, 401, duration, {
-                result: 'invalid_otp',
-                mobileNumber: mobileNumber
-            });
-
-            return res.status(401).json({'status': 'error', 'message': 'Invalid OTP'});
-        }
-
-        requestLogger.info('OTP verification successful', {
-            mobileNumber: mobileNumber
-        });
-        
-        // Get user details from Authentication table (LSP rider)
-        const username = mobileNumber + "@lsp-rider.local";
-        requestLogger.logExternalCall('DynamoDB', 'getItem', {
-            pk: 'Authentication',
-            sk: `Username#${username}#Profile`
-        }, 'start');
-
-        const userRecord = await getItem({
-            "pk": "Authentication", 
-            "sk": "Username#" + username + "#Profile"
-        });
-
-        requestLogger.logExternalCall('DynamoDB', 'getItem', {
-            pk: 'Authentication',
-            sk: `Username#${username}#Profile`,
-            found: !!userRecord.Item
-        }, 'success');
-        
-        if (!userRecord.Item || !userRecord.Item.ATTR1) {
-            requestLogger.warn('User profile not found', {
-                mobileNumber: mobileNumber,
-                username: username,
-                hasRecord: !!userRecord.Item,
-                hasAttr1: !!(userRecord.Item && userRecord.Item.ATTR1)
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/verify-otp', requestId, 404, duration, {
-                result: 'user_not_found',
-                mobileNumber: mobileNumber
-            });
-
-            return res.status(404).json({'status': 'error', 'message': 'User not found. Please contact admin.'});
-        }
-        
-        const userInfo = userRecord.Item.ATTR1;
-        
-        // Check if user is confirmed by admin
-        if (userInfo.isConfirmedByAdmin !== 'true') {
-            requestLogger.warn('User not approved by admin', {
-                mobileNumber: mobileNumber,
-                username: username,
-                eid: userInfo.eid,
-                isConfirmedByAdmin: userInfo.isConfirmedByAdmin
-            });
-
-            const duration = Date.now() - startTime;
-            logger.logRequestEnd('POST /v1/auth/verify-otp', requestId, 403, duration, {
-                result: 'not_approved',
-                mobileNumber: mobileNumber,
-                eid: userInfo.eid
-            });
-
-            return res.status(403).json({'status': 'error', 'message': 'Account not yet approved by admin'});
-        }
-
-        requestLogger.info('User validation successful', {
-            mobileNumber: mobileNumber,
-            username: username,
-            eid: userInfo.eid,
-            role: userInfo.role,
-            enterpriseType: userInfo.enterprise_type
-        });
-        
-        // Generate JWT payload similar to Cognito token structure
-        const jwtPayload = {
-            sub: userInfo.eid, // Subject - using enterprise ID as user ID
-            email_verified: false, // OTP users don't have verified email
-            iss: 'lsp-oms-otp', // Issuer
-            'cognito:username': username,
-            'custom:enterpriseType': userInfo.enterprise_type || 'lsp',
-            'custom:eid': userInfo.eid,
-            'custom:isConfirmedByAdmin': 'true',
-            'custom:role': userInfo.role || 'lsp_rider',
-            'custom:mobileNumber': mobileNumber,
-            'custom:authMethod': 'otp',
-            aud: 'lsp-oms-client', // Audience
-            event_id: 'otp-' + Date.now(), // Event ID
-            token_use: 'id',
-            auth_time: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + (4 * 60 * 60), // Expires in 4 hours
-            iat: Math.floor(Date.now() / 1000), // Issued at
-            jti: 'otp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9), // JWT ID
-            username: username
-        };
-        
-        requestLogger.logBusinessOperation('jwtGeneration', {
-            mobileNumber: mobileNumber,
-            eid: userInfo.eid,
-            role: userInfo.role,
-            expiresIn: '4_hours'
-        }, 'start');
-
-        // Generate JWT token
-        const jwtToken = jwt.sign(jwtPayload, process.env.JWT_SECRET);
-
-        requestLogger.logBusinessOperation('jwtGeneration', {
-            mobileNumber: mobileNumber,
-            eid: userInfo.eid,
-            tokenLength: jwtToken.length
-        }, 'success');
-        
-        // Create response similar to Cognito login response
-        const display_name = "Lsp-" + mobileNumber;
-        const tokenResponse = {
-            'jwt': jwtToken,
-            'eid': userInfo.eid,
-            'username': username,
-            'enterprise_type': userInfo.enterprise_type || 'lsp',
-            'display_name': display_name,
-            'role': userInfo.role || 'lsp_rider',
-            'mobile_number': mobileNumber,
-            'auth_method': 'otp'
-        };
-        
-        // Clear OTP after successful verification
-        requestLogger.logExternalCall('DynamoDB', 'updateItem', {
-            pk: 'Authentication',
-            sk: `Mobile#${mobileNumber}`,
-            operation: 'clear_otp'
-        }, 'start');
-
-        await updateItem({
-            "pk": "Authentication", 
-            "sk": "Mobile#" + mobileNumber,
-            'update_expression':'REMOVE otp, otp_expiry'
-        });
-
-        requestLogger.logExternalCall('DynamoDB', 'updateItem', {
-            pk: 'Authentication',
-            sk: `Mobile#${mobileNumber}`,
-            operation: 'clear_otp'
-        }, 'success');
-
-        requestLogger.info('OTP verification completed successfully', {
-            mobileNumber: mobileNumber,
-            username: username,
-            eid: userInfo.eid,
-            role: userInfo.role,
-            authMethod: 'otp'
-        });
-
-        const duration = Date.now() - startTime;
-        logger.logRequestEnd('POST /v1/auth/verify-otp', requestId, 200, duration, {
-            result: 'success',
-            mobileNumber: mobileNumber,
-            eid: userInfo.eid,
-            role: userInfo.role
-        });
-        
-        res.status(200).json({
-            'status': 'success', 
-            'message': 'OTP verified successfully',
-            'token': tokenResponse
-        });
-        
-    }catch(e){
-        requestLogger.error('OTP verification failed with exception', {
-            mobileNumber: req.body ? req.body.mobile_number : null,
-            error: e.message,
-            stack: e.stack
-        }, e);
-
-        const duration = Date.now() - startTime;
-        logger.logRequestEnd('POST /v1/auth/verify-otp', requestId, 500, duration, {
-            result: 'error',
-            error: e.message
-        });
-
-        const statusCode = e.$metadata && e.$metadata.httpStatusCode ? e.$metadata.httpStatusCode : 500;
-        res.status(statusCode).json({'status': 'error', 'message': e.message || 'OTP verification failed'});
-        next(e);
-    }
-}
-
-
-
 const checkToken = async(req, res, next) => {
     let token = req.headers['x-access-token'] || req.headers['authorization']; // Express headers are auto converted to lowercase
     if (token !== undefined && token.startsWith('Bearer ')) {
@@ -817,7 +291,7 @@ const validateUnauthorisedAccess = async (req, res, next) => {
       if(!decoded_eid)
           res.status(403).json({ 'status': 'error', message: 'Forbidden - Enterprise ID not set' });
 
-      const eid = req.body?.meta?.eid || req.body?.data?.ATTR1?.eid || req.body?.data?.eid || req.body?.eid;
+      const eid = req.body?.data?.eid || req.body?.eid;
       if(eid && eid !== decoded_eid)
           res.status(403).json({ 'status': 'error', message: 'Forbidden - Not authorised to perform this action' });
       next()     
@@ -888,8 +362,33 @@ const validateAWSToken = async (req, res, next) => {
       return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   };
+  function checkClaims(requiredClaims) {
+    //console.log("requiredClaims - ", requiredClaims)
+    return function (req, res, next) {
+        //console.log("In checkClaims - ", req.user['custom:claims'])
+        const userRole = req.user['custom:role'];
+
+        if(!userRole){
+            console.error("Role not found in token")
+            return res.status(403).json({ message: 'Forbidden - Not authorised to perform this action' });
+        }
+        if (!ROLES_CLAIMS[userRole]) {
+            console.error("Role claims not found for user role:", userRole);
+            return res.status(403).json({ message: 'Forbidden - Not authorised to perform this action' });
+        }
+        //console.log('Role Claims - ',ROLES_CLAIMS[userRole])
+        const hasRequiredClaims = requiredClaims.some(claim => ROLES_CLAIMS[userRole].includes(claim));
+        if (hasRequiredClaims) {
+            //console.log("Has required claims")
+            next();
+        } else {
+            console.error("Does not have required claims")
+            res.status(403).json({ message: 'Forbidden - Not authorised to perform this action' });
+        }
+    };
+  }
 module.exports = {
-    sendUserOTP, verifyUserOTP, checkToken, validateAWSToken, userSignUp, 
+    checkToken, validateAWSToken, userSignUp,
     confirmUserSignUp, initiateUserAuth, forgotUserPassword, confirmUserForgotPassword,
-    resendVerificationCode, validateUnauthorisedAccess
+    resendVerificationCode, validateUnauthorisedAccess, checkClaims
 }

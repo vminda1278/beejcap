@@ -8,7 +8,7 @@
 	},
 	"item": [
 		{
-			"name": "Supplier Auth",
+			"name": "Supplier Admin",
 			"description": "User authentication and account management endpoints",
 			"item": [
 				{
@@ -79,11 +79,11 @@
 									"if (pm.response.code === 200) {",
 									"    const response = pm.response.json();",
 									"    if (response.status === 'success' && response.token) {",
-									"        pm.environment.set('authToken', response.token.jwt);",
+									"        pm.environment.set('adminAuthToken', response.token.jwt);",
 									"        pm.environment.set('eid', response.token.eid);",
 									"        pm.environment.set('userRole', response.token.role);",
 									"        pm.environment.set('enterpriseType', response.token.enterprise_type);",
-									"        console.log('Auth token saved:', response.token.jwt);",
+									"        console.log('Admin auth token saved:', response.token.jwt);",
 									"    }",
 									"}"
 								],
@@ -206,79 +206,35 @@
 					"response": []
 				},
 				{
-					"name": "Send OTP",
+					"name": "Add Supplier Sales Head",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Content-Type",
 								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"mobile_number\": \"{{rider1Mobile}}\",\n  \"eid\": \"{{eid}}\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/v1/auth/sendOTP",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"v1",
-								"auth",
-								"sendOTP"
-							]
-						},
-						"description": "Send OTP to mobile number for authentication"
-					},
-					"response": []
-				},
-				{
-					"name": "Verify OTP",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    const response = pm.response.json();",
-									"    if (response.status === 'success' && response.token) {",
-									"        pm.environment.set('otpAuthToken', response.token.jwt);",
-									"        pm.environment.set('otpEid', response.token.eid);",
-									"        pm.environment.set('otpUserRole', response.token.role);",
-									"        console.log('OTP auth token saved:', response.token.jwt);",
-									"    }",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
+							},
 							{
-								"key": "Content-Type",
-								"value": "application/json"
+								"key": "Authorization",
+								"value": "Bearer {{adminAuthToken}}"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"mobile_number\": \"{{rider1Mobile}}\",\n  \"otp\": \"{{testOTP}}\"\n}"
+							"raw": "{\n  \"data\": {\n    \"email\": \"{{salesHeadEmail}}\",\n    \"password\": \"TempPassword123!\",\n    \"business_name\": \"Test Business\",\n    \"enterprise_type\": \"supplier\",\n    \"role\": \"supplier_sales_head\",\n    \"eid\": \"{{eid}}\",\n    \"clientId\": \"{{cognitoClientId}}\"\n  }\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/v1/auth/verifyOTP",
+							"raw": "{{baseUrl}}/v1/supplier/addUser",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"v1",
-								"auth",
-								"verifyOTP"
+								"supplier",
+								"addUser"
 							]
 						},
-						"description": "Verify OTP and get authentication token"
+						"description": "Add a new supplier sales head user to the existing supplier enterprise. Uses eid from admin login. Requires supplier:addUser claim."
 					},
 					"response": []
 				}
@@ -405,6 +361,11 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Supplier Sales Head",
+			"description": "Supplier management endpoints",
+			"item": []
 		}
 	],
 	"auth": {
