@@ -91,6 +91,30 @@
 			"value": "tpminda@gmail.com",
 			"type": "default",
 			"enabled": true
+		},
+		{
+			"key": "salesHeadAuthToken",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "salesHeadEid",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "salesHeadRole",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "salesHeadEnterpriseType",
+			"value": "",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
